@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Be Safe Academy | SSH Attack Lab</title>
+<title>Be Safe Academy | SIEM Realista - SSH Attack Lab</title>
 <style>
 :root{
   --bg:#050914;--bg2:#081426;--panel:#0d1728;--panel2:#111f35;--panel3:#142641;
@@ -122,7 +122,60 @@ pre{margin:0;padding:13px;font:13px/1.55 var(--mono);white-space:pre-wrap;word-b
 @media(max-width:1180px){.siemApp,.labGrid,.heroGrid,.shell,.chartGrid,.split{grid-template-columns:1fr}.loginBox{border-left:0;border-top:1px solid var(--line)}.sidebar{border-right:0;border-bottom:1px solid var(--line)}.siemToolbar{grid-template-columns:1fr 1fr}}
 @media(max-width:720px){.grid4,.dashGrid{grid-template-columns:1fr 1fr}.content,.hero{padding:12px}.heroText,.loginBox{padding:24px}.topbar{align-items:flex-start;flex-direction:column}.progressWrap{width:170px}.siemToolbar{grid-template-columns:1fr}.termOut{max-height:420px}.tl{grid-template-columns:1fr}}
 @media(max-width:520px){.grid4,.dashGrid{grid-template-columns:1fr}h1{font-size:39px}.siemView{padding:10px}.table{font-size:12px}}
+
+.certificateModal{
+position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:999;display:none;
+align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(10px)
+}
+.certificate{
+width:min(1100px,100%);background:linear-gradient(135deg,#fff,#eef7ff 50%,#ffffff);
+color:#13233d;border-radius:28px;overflow:hidden;box-shadow:0 35px 120px rgba(0,0,0,.55);
+position:relative;border:10px solid #d8ecff
+}
+.certHeader{
+padding:28px;background:linear-gradient(135deg,#06101c,#0d1b2f);color:white;text-align:center
+}
+.certHeader h1{margin:0;font-size:52px;letter-spacing:-2px}
+.certHeader p{margin:8px 0 0;color:#cde2ff}
+.certBody{padding:42px;text-align:center}
+.certSeal{
+position:absolute;right:30px;top:130px;width:150px;height:150px;border-radius:50%;
+background:radial-gradient(circle,#72ffcf,#79a7ff);display:grid;place-items:center;
+font-weight:950;color:#06101c;font-size:18px;transform:rotate(-14deg);
+box-shadow:0 0 40px rgba(114,255,207,.4)
+}
+.certName{
+font-size:44px;font-weight:950;margin:18px 0;color:#0d1b2f
+}
+.certDesc{
+max-width:760px;margin:0 auto;font-size:18px;line-height:1.7;color:#344b68
+}
+.certGrid{
+display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:28px
+}
+.certBox{
+border:1px solid rgba(13,27,47,.12);border-radius:18px;padding:14px;background:#f7fbff
+}
+.certFooter{
+display:flex;justify-content:space-between;gap:20px;padding:26px 40px;
+border-top:1px solid rgba(13,27,47,.1);align-items:flex-end
+}
+.sig{
+font-family:cursive;font-size:32px;color:#10223a
+}
+.failBox{
+margin-top:18px;padding:18px;border-radius:18px;
+background:rgba(255,93,115,.08);border:1px solid rgba(255,93,115,.25)
+}
+@media(max-width:700px){
+.certGrid{grid-template-columns:1fr}
+.certHeader h1{font-size:34px}
+.certName{font-size:30px}
+.certFooter{flex-direction:column;align-items:flex-start}
+}
+
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 <section class="hero" id="hero">
@@ -483,7 +536,113 @@ const qz=[
 let rendered=[];
 function shuffle(a){return a.map(v=>({v,s:Math.random()})).sort((x,y)=>x.s-y.s).map(x=>x.v)}
 function renderQuiz(){let box=document.getElementById("quiz");box.innerHTML="";rendered=qz.map((q,i)=>{let opts=shuffle(q.a.map((t,j)=>({t,ok:j===q.c})));let d=document.createElement("div");d.className="quizQ";d.innerHTML=`<h3>${i+1}. ${q.q}</h3>`;opts.forEach(o=>{let b=document.createElement("button");b.className="option";b.textContent=o.t;b.dataset.ok=enc(o.ok?"1":"0");b.onclick=()=>{d.querySelectorAll(".option").forEach(x=>x.classList.remove("selected"));b.classList.add("selected")};d.appendChild(b)});box.appendChild(d);return{e:enc(q.e)}})}
-function finishQuiz(){let qs=[...document.querySelectorAll(".quizQ")],score=0,ans=0;qs.forEach(q=>{let s=q.querySelector(".selected");if(s){ans++;if(dec(s.dataset.ok)==="1")score++}});let r=document.getElementById("result");if(ans<qs.length){r.style.display="block";r.innerHTML="<b class='bad'>Responda tudo, bebê.</b><p>Incidente pela metade vira relatório humilhante.</p>";return}let pct=Math.round(score/qs.length*100);r.style.display="block";r.innerHTML=`<h3>${pct>=70?"Aula concluída. SIEM aprovado.":"Aula concluída, mas o SOC pediu reciclagem."}</h3><p><b class="${pct>=70?"ok":"bad"}">Resultado: ${score}/10 (${pct}%)</b></p><ol>${rendered.map(x=>"<li>"+dec(x.e)+"</li>").join("")}</ol>`;done.add(4);buildNav();progress()}
+function finishQuiz(){let qs=[...document.querySelectorAll(".quizQ")],score=0,ans=0;qs.forEach(q=>{let s=q.querySelector(".selected");if(s){ans++;if(dec(s.dataset.ok)==="1")score++}});let r=document.getElementById("result");if(ans<qs.length){r.style.display="block";r.innerHTML="<b class='bad'>Responda tudo, bebê.</b><p>Incidente pela metade vira relatório humilhante.</p>";return}let pct=Math.round(score/qs.length*100);r.style.display="block";
+if(pct>=70){
+r.innerHTML=`<h3>Aula concluída. O SIEM sobreviveu ao caos corporativo.</h3>
+<p><b class="ok">Resultado: ${score}/10 (${pct}%)</b></p>
+<p>Você conseguiu correlacionar ataque, evidência, investigação e contenção sem transformar o auth.log em fanfic operacional.</p>
+<ol>${rendered.map(x=>"<li>"+dec(x.e)+"</li>").join("")}</ol>
+<div style="margin-top:16px">
+<button class="primary" onclick="showCertificate(${pct})">Liberar Certificado PNG</button>
+</div>`;
+}else{
+r.innerHTML=`<div class="failBox">
+<h3 style="margin-top:0">SOC detectou necessidade de reciclagem técnica 😭</h3>
+<p><b class="bad">Resultado: ${score}/10 (${pct}%)</b></p>
+<p>
+O SIEM olhou para você... e perguntou:
+“amour... você realmente ignorou o rule.id 5763?”
+</p>
+<p>
+Reveja principalmente:
+</p>
+<ul>
+<li>correlação de brute force SSH</li>
+<li>interpretação do auth.log</li>
+<li>pivot por source.ip e rule.id</li>
+<li>contenção com active response</li>
+</ul>
+
+<button class="primary" onclick="retryQuiz()">Refazer Quiz</button>
+</div>`;
+}
+done.add(4);buildNav();progress()}
+
+function retryQuiz(){
+ document.querySelectorAll('.option').forEach(o=>o.classList.remove('selected'));
+ document.getElementById('result').style.display='none';
+ window.scrollTo({top:document.getElementById('quiz').offsetTop-20,behavior:'smooth'});
+}
+
+function showCertificate(pct){
+ document.getElementById('certStudent').textContent=student;
+ document.getElementById('certScore').textContent=pct + '%';
+ document.getElementById('certDate').textContent=new Date().toLocaleDateString('pt-BR');
+ document.getElementById('certificateModal').style.display='flex';
+}
+
+function closeCertificate(){
+ document.getElementById('certificateModal').style.display='none';
+}
+
+function downloadCertificate(){
+ const card=document.getElementById('certificateCard');
+
+ html2canvas(card,{scale:2,useCORS:true}).then(canvas=>{
+   const link=document.createElement('a');
+   link.download='be-safe-academy-certificado.png';
+   link.href=canvas.toDataURL('image/png');
+   link.click();
+ });
+}
+
 </script>
+
+<div class="certificateModal" id="certificateModal">
+  <div class="certificate" id="certificateCard">
+    <div class="certHeader">
+      <h1>Be Safe Academy</h1>
+      <p>Certificado Oficial de Conclusão Técnica</p>
+    </div>
+
+    <div class="certSeal">SOC<br>READY</div>
+
+    <div class="certBody">
+      <div style="font-size:18px;color:#4a5e7b">Certificamos que</div>
+      <div class="certName" id="certStudent">Aluno</div>
+
+      <div class="certDesc">
+        concluiu com aproveitamento o treinamento técnico
+        <b>“SIEM SOC Classroom • SSH Brute Force Detection & Response”</b>,
+        realizando análise ofensiva, investigação defensiva, correlação de eventos,
+        resposta ativa e interpretação de logs Linux/SIEM.
+      </div>
+
+      <div class="certGrid">
+        <div class="certBox"><b>Carga Horária</b><br>4 horas técnicas</div>
+        <div class="certBox"><b>Aproveitamento</b><br><span id="certScore">0%</span></div>
+        <div class="certBox"><b>Data</b><br><span id="certDate"></span></div>
+      </div>
+
+      <div style="margin-top:28px;font-size:15px;color:#566b88">
+        Competências desenvolvidas: SIEM, Wazuh, SSH, Linux Logs, MITRE ATT&CK,
+        Threat Detection, Incident Response, Auth Correlation e Active Response.
+      </div>
+    </div>
+
+    <div class="certFooter">
+      <div>
+        <div style="font-size:13px;color:#6b7f98">Instrutora</div>
+        <div class="sig">Mariana BS</div>
+      </div>
+
+      <div>
+        <button class="primary" onclick="downloadCertificate()">Baixar PNG</button>
+        <button class="secondary" onclick="closeCertificate()">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
