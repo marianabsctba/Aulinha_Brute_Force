@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Be Safe Academy | SIEM Realista - SSH Attack Lab</title>
+<style>
+:root{
+  --bg:#050914;--bg2:#081426;--panel:#0d1728;--panel2:#111f35;--panel3:#142641;
+  --ink:#eaf4ff;--muted:#91a7c4;--line:rgba(255,255,255,.105);
+  --cyan:#72ffcf;--blue:#79a7ff;--red:#ff5d73;--yellow:#ffd166;--green:#75f0a2;--purple:#c69cff;
+  --shadow:0 24px 90px rgba(0,0,0,.44);
+  --mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;
+  --sans:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:
+radial-gradient(circle at 15% 0%,rgba(114,255,207,.13),transparent 28%),
+radial-gradient(circle at 88% 4%,rgba(121,167,255,.15),transparent 32%),
+linear-gradient(135deg,#030711,#071222 50%,#050814);color:var(--ink);font-family:var(--sans)}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.hero{min-height:100vh;display:grid;place-items:center;padding:26px}
+.heroCard{width:min(1220px,100%);border:1px solid var(--line);border-radius:32px;background:rgba(13,23,40,.91);box-shadow:var(--shadow);overflow:hidden}
+.heroGrid{display:grid;grid-template-columns:1.1fr .9fr}
+.heroText{padding:44px}
+.badge{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:99px;border:1px solid rgba(114,255,207,.32);background:rgba(114,255,207,.08);color:var(--cyan);font-weight:950;font-size:13px}
+h1{font-size:clamp(34px,5.4vw,72px);line-height:.9;letter-spacing:-2.4px;margin:22px 0 16px}
+.heroText p{font-size:18px;line-height:1.55;color:#c9d9ef;max-width:760px}
+.brief{display:grid;gap:12px;margin-top:22px}
+.brief div{padding:14px 16px;border-radius:18px;background:rgba(255,255,255,.045);border:1px solid var(--line)}
+.brief b{color:var(--cyan)}
+.loginBox{padding:44px;border-left:1px solid var(--line);background:linear-gradient(180deg,rgba(121,167,255,.15),rgba(114,255,207,.07));display:flex;flex-direction:column;justify-content:center}
+.loginBox h2{font-size:31px;margin:0 0 12px}
+label{font-weight:850;color:#bfd2eb;margin:14px 0 8px}
+.loginBox input{width:100%;padding:16px 18px;border-radius:16px;border:1px solid rgba(255,255,255,.14);background:rgba(2,6,13,.78);color:var(--ink);outline:0}
+.primary{border:0;border-radius:15px;padding:12px 16px;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#04101c;font-weight:950;box-shadow:0 16px 40px rgba(114,255,207,.16)}
+.secondary{border:1px solid var(--line);border-radius:14px;padding:10px 13px;background:rgba(255,255,255,.055);color:var(--ink)}
+.ghost{border:1px solid rgba(114,255,207,.25);border-radius:13px;padding:9px 11px;background:rgba(114,255,207,.06);color:var(--cyan);font-weight:850}
+.small{font-size:12px;color:var(--muted);line-height:1.45}
+.warn{color:var(--yellow);font-weight:950;min-height:22px}
+.main{display:none;min-height:100vh}
+.topbar{position:sticky;top:0;z-index:50;display:flex;justify-content:space-between;gap:14px;align-items:center;padding:11px 16px;background:rgba(5,9,20,.88);backdrop-filter:blur(18px);border-bottom:1px solid var(--line)}
+.brand{font-weight:950}.brand span{color:var(--cyan)}
+.student{font-size:13px;color:var(--muted);margin-top:2px}
+.progressWrap{width:min(360px,35vw);height:8px;border-radius:999px;overflow:hidden;background:rgba(255,255,255,.075)}
+.progress{height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--blue))}
+.shell{display:grid;grid-template-columns:280px 1fr;min-height:calc(100vh - 60px)}
+.sidebar{background:rgba(3,7,14,.45);border-right:1px solid var(--line);padding:14px}
+.navBtn{width:100%;display:flex;align-items:center;gap:9px;text-align:left;border:1px solid transparent;border-radius:14px;background:transparent;color:#c6d7ee;padding:12px;margin-bottom:7px}
+.navBtn.active{background:rgba(114,255,207,.09);border-color:rgba(114,255,207,.34);color:white}
+.navBtn.done:after{content:"✓";margin-left:auto;color:var(--green);font-weight:950}
+.content{padding:16px}
+.section{display:none}.section.active{display:block;animation:fade .2s ease}
+@keyframes fade{from{opacity:.55;transform:translateY(4px)}to{opacity:1;transform:none}}
+.card{background:rgba(13,23,40,.76);border:1px solid var(--line);border-radius:22px;padding:18px;margin-bottom:14px;box-shadow:0 18px 58px rgba(0,0,0,.22)}
+.card h2{font-size:30px;margin:0 0 9px;letter-spacing:-.7px}.card h3{margin:14px 0 8px}
+.card p,.card li{line-height:1.58;color:#c8d9ee}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.kpi{border:1px solid var(--line);background:rgba(255,255,255,.045);border-radius:18px;padding:14px}
+.kpi b{display:block;font-size:22px}.kpi span{font-size:12px;color:var(--muted)}
+.siemApp{display:grid;grid-template-columns:260px 1fr;gap:14px;min-height:720px}
+.siemSide{border:1px solid var(--line);border-radius:22px;background:rgba(6,12,23,.86);overflow:hidden}
+.siemLogo{padding:15px;border-bottom:1px solid var(--line);background:rgba(121,167,255,.08);font-weight:950}
+.siemMenu{padding:10px}
+.siemMenu button{width:100%;text-align:left;border:1px solid transparent;border-radius:13px;background:transparent;color:#c9d9ee;padding:11px 12px;margin-bottom:6px}
+.siemMenu button.active{border-color:rgba(114,255,207,.35);background:rgba(114,255,207,.09);color:white}
+.siemMain{border:1px solid var(--line);border-radius:22px;background:rgba(9,18,32,.88);overflow:hidden}
+.siemHeader{padding:14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:rgba(255,255,255,.03)}
+.siemHeader h2{margin:0;font-size:22px}
+.live{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(117,240,162,.32);color:var(--green);padding:6px 9px;border-radius:999px;font-size:12px;font-weight:950;background:rgba(117,240,162,.07)}
+.live:before{content:"";width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 18px var(--green)}
+.siemToolbar{display:grid;grid-template-columns:1fr 150px 130px auto;gap:8px;padding:12px;border-bottom:1px solid var(--line);background:rgba(0,0,0,.13)}
+.siemToolbar input,.siemToolbar select{min-width:0;border:1px solid var(--line);border-radius:12px;background:rgba(0,0,0,.25);color:var(--ink);padding:10px}
+.siemView{padding:14px}
+.dashGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+.metric{border:1px solid var(--line);border-radius:17px;background:rgba(255,255,255,.045);padding:13px}
+.metric b{display:block;font-size:27px}.metric span{font-size:12px;color:var(--muted)}
+.chartGrid{display:grid;grid-template-columns:1.1fr .9fr;gap:12px}
+.panel{border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.035);padding:13px}
+.bars{display:grid;gap:8px;margin-top:10px}
+.barRow{display:grid;grid-template-columns:96px 1fr 34px;gap:8px;align-items:center;font-size:12px;color:#cbdcf0}
+.bar{height:10px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden}
+.bar span{display:block;height:100%;background:linear-gradient(90deg,var(--cyan),var(--blue));border-radius:999px}
+.eventList{display:grid;gap:9px;max-height:560px;overflow:auto}
+.eventCard{border:1px solid var(--line);border-radius:15px;background:rgba(255,255,255,.04);padding:12px}
+.eventCard.critical{border-color:rgba(255,93,115,.42);background:rgba(255,93,115,.07)}
+.eventCard.high{border-color:rgba(255,121,95,.36);background:rgba(255,121,95,.06)}
+.eventCard.medium{border-color:rgba(255,209,102,.36);background:rgba(255,209,102,.06)}
+.eventCard.low{border-color:rgba(121,167,255,.33);background:rgba(121,167,255,.055)}
+.eventTop{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.eventTitle{font-weight:950}.time{font:12px var(--mono);color:var(--muted)}
+.pill{display:inline-flex;padding:4px 7px;margin:3px 3px 0 0;border-radius:999px;background:rgba(255,255,255,.08);font-size:12px;color:#c9d9ef}
+.table{width:100%;border-collapse:collapse;font-size:13px}
+.table th,.table td{border-bottom:1px solid var(--line);padding:10px;text-align:left;vertical-align:top}
+.table th{color:#b9cae2;font-size:12px;background:rgba(255,255,255,.035)}
+.raw{font-family:var(--mono);font-size:12px;white-space:pre-wrap;word-break:break-word;color:#dfffe9}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.labGrid{display:grid;grid-template-columns:1.02fr .98fr;gap:14px}
+.term{background:#040812;border:1px solid rgba(114,255,207,.18);border-radius:18px;overflow:hidden}
+.termHead{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.055);font:850 12px var(--mono);color:#bbcee5}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--red);box-shadow:16px 0 var(--yellow),32px 0 var(--green);flex:none}
+.termOut{min-height:420px;max-height:540px;overflow:auto;padding:13px;font:13px/1.5 var(--mono);white-space:pre-wrap;word-break:break-word;color:#e1ffef}
+.termIn{display:flex;gap:8px;align-items:center;padding:10px 12px;border-top:1px solid var(--line);background:rgba(255,255,255,.035)}
+.prompt{font:850 13px var(--mono);color:var(--cyan);white-space:nowrap}
+.termIn input{flex:1;min-width:0;background:transparent;border:0;outline:0;color:white;font:13px var(--mono)}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.tab{border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.045);color:#c9d9ef;padding:9px 11px}
+.tab.active{border-color:rgba(114,255,207,.45);background:rgba(114,255,207,.1);color:white}
+.cmd{color:var(--cyan)}.ok{color:var(--green)}.bad{color:var(--red)}.info{color:var(--blue)}.yellow{color:var(--yellow)}.purple{color:var(--purple)}
+pre{margin:0;padding:13px;font:13px/1.55 var(--mono);white-space:pre-wrap;word-break:break-word;color:#dfffe9}
+.cmdBtns{display:grid;gap:8px;margin-top:10px}.cmdBtns button{text-align:left}
+.caseBox{display:grid;gap:10px}
+.caseItem{border:1px solid var(--line);border-radius:15px;background:rgba(255,255,255,.04);padding:12px}
+.timeline{display:grid;gap:10px}.tl{display:grid;grid-template-columns:96px 1fr;gap:10px;border:1px solid var(--line);border-radius:15px;padding:11px;background:rgba(255,255,255,.04)}.tl time{font:850 12px var(--mono);color:var(--cyan)}
+.quizQ{border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.04);padding:16px;margin-bottom:14px}
+.option{display:block;width:100%;text-align:left;margin:8px 0;padding:12px;border-radius:13px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:#dceaff}
+.option.selected{border-color:rgba(114,255,207,.62);background:rgba(114,255,207,.1)}
+.result{display:none;margin-top:14px;border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.05);padding:16px}
+.footerActions{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:14px}
+.toast{display:none;position:fixed;right:16px;bottom:16px;z-index:200;max-width:380px;border:1px solid rgba(114,255,207,.35);border-radius:18px;background:rgba(7,16,29,.96);box-shadow:var(--shadow);padding:14px 16px;color:#dff7ff}
+@media(max-width:1180px){.siemApp,.labGrid,.heroGrid,.shell,.chartGrid,.split{grid-template-columns:1fr}.loginBox{border-left:0;border-top:1px solid var(--line)}.sidebar{border-right:0;border-bottom:1px solid var(--line)}.siemToolbar{grid-template-columns:1fr 1fr}}
+@media(max-width:720px){.grid4,.dashGrid{grid-template-columns:1fr 1fr}.content,.hero{padding:12px}.heroText,.loginBox{padding:24px}.topbar{align-items:flex-start;flex-direction:column}.progressWrap{width:170px}.siemToolbar{grid-template-columns:1fr}.termOut{max-height:420px}.tl{grid-template-columns:1fr}}
+@media(max-width:520px){.grid4,.dashGrid{grid-template-columns:1fr}h1{font-size:39px}.siemView{padding:10px}.table{font-size:12px}}
+</style>
+</head>
+<body>
+<section class="hero" id="hero">
+  <div class="heroCard">
+    <div class="heroGrid">
+      <div class="heroText">
+        <span class="badge">Be Safe Academy • SIEM realista no navegador</span>
+        <h1>Agora sim: um SIEM de verdade.</h1>
+        <p>
+          Aula técnica da Be Safe .Inc com um mini-SIEM funcional: dashboard, Discover, alertas,
+          regras de detecção, timeline, caso, eventos brutos, query simples e resposta ativa simulada.
+          O atacante roda comando, a vítima gera log e o SIEM acusa. Sem dashboard decorativo de aquário corporativo.
+        </p>
+        <div class="brief">
+          <div><b>Cenário:</b> força bruta SSH contra servidor Linux monitorado.</div>
+          <div><b>SIEM:</b> eventos pesquisáveis, severidade, rule.id, MITRE, raw logs, casos e resposta.</div>
+          <div><b>Humor técnico:</b> porque incidente sem ironia é só sofrimento com SLA.</div>
+        </div>
+      </div>
+      <div class="loginBox">
+        <h2>Nome do aluno</h2>
+        <p class="small">Obrigatório para começar. O SIEM precisa de contexto, e o SOC precisa culpar alguém pelo relatório.</p>
+        <label for="studentName">Aluno</label>
+        <input id="studentName" placeholder="Ex.: Mariana BS" autocomplete="name">
+        <button class="primary" style="margin-top:18px" onclick="start()">Entrar na aula</button>
+        <p id="warn" class="warn"></p>
+        <p class="small">Lab educacional e autorizado. Não rode contra terceiros. Hydra fora de escopo vira BO, não portfólio.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<main class="main" id="main">
+  <div class="topbar">
+    <div><div class="brand">Be Safe Academy <span>| SIEM SOC Classroom</span></div><div id="studentLabel" class="student"></div></div>
+    <div class="progressWrap"><div id="progress" class="progress"></div></div>
+  </div>
+  <div class="shell">
+    <aside id="nav" class="sidebar"></aside>
+    <section class="content">
+
+      <article class="section active" data-section="0">
+        <div class="card">
+          <h2>1. Briefing do ambiente</h2>
+          <p>
+            A Be Safe .Inc possui o servidor <b>srv-files-01</b> com OpenSSH. O agente Wazuh coleta autenticação do Linux,
+            envia ao manager e o SIEM normaliza em eventos de segurança. O incidente simulado é comum:
+            senha fraca em usuário operacional + SSH acessível + atacante com wordlist.
+          </p>
+          <div class="grid4">
+            <div class="kpi"><b>10.10.20.15</b><span>srv-files-01</span></div>
+            <div class="kpi"><b>10.10.50.23</b><span>kali-red-01</span></div>
+            <div class="kpi"><b>22/TCP</b><span>OpenSSH</span></div>
+            <div class="kpi"><b>T1110</b><span>MITRE Brute Force</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>O que diferencia essa versão</h3>
+          <ul>
+            <li>O SIEM tem módulos reais de operação: Overview, Discover, Alerts, Rules, Cases, Timeline e Response.</li>
+            <li>Os comandos do atacante geram eventos no SIEM em tempo real.</li>
+            <li>Os filtros aceitam buscas como <b>source.ip:10.10.50.23</b>, <b>rule.id:5763</b>, <b>ssh</b>, <b>critical</b>.</li>
+            <li>Os alertas têm detalhe, raw event, campos normalizados e mapeamento MITRE.</li>
+          </ul>
+          <div class="footerActions"><button class="primary" onclick="next()">Abrir laboratório</button></div>
+        </div>
+      </article>
+
+      <article class="section" data-section="1">
+        <div class="labGrid">
+          <div class="card">
+            <h2>2. Terminal operacional</h2>
+            <p>Rode os comandos. O SIEM ao lado vai reagir com eventos e alertas. Isso aqui é o “faz e vê o estrago”.</p>
+            <div class="tabs">
+              <button class="tab active" onclick="terminalMode('attacker')">Atacante</button>
+              <button class="tab" onclick="terminalMode('victim')">Vítima</button>
+              <button class="tab" onclick="terminalMode('soc')">SOC</button>
+            </div>
+            <div class="term">
+              <div class="termHead"><span class="dot"></span><span id="termTitle">kali-red-01:/ops</span></div>
+              <div class="termOut" id="termOut"></div>
+              <div class="termIn"><span class="prompt" id="prompt">kali@red:~$</span><input id="cmd" placeholder="digite help" onkeydown="cmdKey(event)" autocomplete="off" spellcheck="false"></div>
+            </div>
+            <div class="cmdBtns" id="cmdBtns"></div>
+          </div>
+          <div class="card">
+            <h2>SIEM em tempo real</h2>
+            <div id="miniSiem"></div>
+          </div>
+        </div>
+        <div class="footerActions"><button class="secondary" onclick="prev()">Voltar</button><button class="primary" onclick="next()">Abrir SIEM completo</button></div>
+      </article>
+
+      <article class="section" data-section="2">
+        <div class="card">
+          <h2>3. SIEM completo</h2>
+          <div class="siemApp">
+            <aside class="siemSide">
+              <div class="siemLogo">Be Safe SIEM</div>
+              <div class="siemMenu" id="siemMenu"></div>
+            </aside>
+            <main class="siemMain">
+              <div class="siemHeader">
+                <div><h2 id="siemTitle">Overview</h2><div class="small">Workspace: Be Safe .Inc / SOC / Linux Authentication</div></div>
+                <span class="live">LIVE INGEST</span>
+              </div>
+              <div class="siemToolbar">
+                <input id="query" placeholder='KQL simples: source.ip:10.10.50.23 AND ssh OR rule.id:5763' oninput="renderSiemView()">
+                <select id="severity" onchange="renderSiemView()"><option value="">severity: all</option><option>critical</option><option>high</option><option>medium</option><option>low</option></select>
+                <select id="dataset" onchange="renderSiemView()"><option value="">dataset: all</option><option>auth.log</option><option>wazuh.alerts</option><option>network</option></select>
+                <button class="secondary" onclick="clearFilters()">limpar</button>
+              </div>
+              <div class="siemView" id="siemView"></div>
+            </main>
+          </div>
+        </div>
+        <div class="footerActions"><button class="secondary" onclick="prev()">Voltar</button><button class="primary" onclick="next()">Explicação técnica</button></div>
+      </article>
+
+      <article class="section" data-section="3">
+        <div class="card">
+          <h2>4. Anatomia da detecção</h2>
+          <div class="split">
+            <div class="term"><div class="termHead"><span class="dot"></span> Ofensivo</div><pre><span class="cmd">nmap -sV -p 22 10.10.20.15</span>
+Confirma OpenSSH aberto.
+
+<span class="cmd">hydra -l suporte -P wordlist-lab.txt ssh://10.10.20.15 -t 4 -V</span>
+Gera múltiplas falhas e um sucesso simulado.
+
+<span class="cmd">ssh suporte@10.10.20.15</span>
+Confirma acesso com credencial fraca.</pre></div>
+            <div class="term"><div class="termHead"><span class="dot"></span> Defensivo</div><pre><span class="cmd">auth.log</span>
+Failed password / Accepted password.
+
+<span class="cmd">rule.id:5712</span>
+Múltiplas falhas de autenticação.
+
+<span class="cmd">rule.id:5763</span>
+Brute force SSH correlacionado.
+
+<span class="cmd">rule.id:5501</span>
+Login aceito após falhas.</pre></div>
+          </div>
+          <p>
+            O SIEM não “descobre ataque” por iluminação divina. Ele coleta eventos, normaliza campos,
+            aplica regras, cruza frequência, origem, usuário e resultado. A parte humana é entender se aquilo é tentativa,
+            comprometimento ou falso positivo. É aí que o dashboard bonito para de ser PowerPoint caro.
+          </p>
+        </div>
+        <div class="footerActions"><button class="secondary" onclick="prev()">Voltar</button><button class="primary" onclick="next()">Quiz final</button></div>
+      </article>
+
+      <article class="section" data-section="4">
+        <div class="card">
+          <h2>5. Quiz final</h2>
+          <p>As alternativas são plausíveis, mas só uma é a mais correta. As respostas e explicações estão protegidas com salt/XOR e embaralhadas.</p>
+          <div id="quiz"></div>
+          <button class="primary" onclick="finishQuiz()">Finalizar</button>
+          <div class="result" id="result"></div>
+        </div>
+      </article>
+
+    </section>
+  </div>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+const sections=["Briefing","Laboratório","SIEM completo","Detecção","Quiz"];
+let current=0, done=new Set([0]), student="", mode="attacker", siemTab="overview";
+let state={port:false, brute:false, login:false, block:false, case:false, id:0, events:[], logs:[]};
+
+const K="BESAFE-SIEM-SALT-XOR-2026";
+function enc(s){let o="";for(let i=0;i<s.length;i++)o+=String.fromCharCode(s.charCodeAt(i)^K.charCodeAt(i%K.length));return btoa(unescape(encodeURIComponent(o)))}
+function dec(s){let raw=decodeURIComponent(escape(atob(s)));let o="";for(let i=0;i<raw.length;i++)o+=String.fromCharCode(raw.charCodeAt(i)^K.charCodeAt(i%K.length));return o}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]))}
+
+function start(){
+ const n=document.getElementById("studentName").value.trim();
+ if(!n){document.getElementById("warn").textContent="Sem nome, sem SIEM, bebê. Até evento precisa de owner.";return}
+ student=n;document.getElementById("hero").style.display="none";document.getElementById("main").style.display="block";document.getElementById("studentLabel").textContent="Aluno: "+student;
+ buildNav();initTerm();buildSiemMenu();renderMiniSiem();renderSiemView();renderQuiz();progress()
+}
+function buildNav(){let nav=document.getElementById("nav");nav.innerHTML="";sections.forEach((s,i)=>{let b=document.createElement("button");b.className="navBtn"+(i===current?" active":"")+(done.has(i)?" done":"");b.textContent=(i+1)+". "+s;b.onclick=()=>go(i);nav.appendChild(b)})}
+function go(i){current=i;done.add(i);document.querySelectorAll(".section").forEach(x=>x.classList.remove("active"));document.querySelector(`[data-section="${i}"]`).classList.add("active");buildNav();progress();window.scrollTo({top:0,behavior:"smooth"});if(i===2)renderSiemView()}
+function next(){go(Math.min(sections.length-1,current+1))} function prev(){go(Math.max(0,current-1))}
+function progress(){document.getElementById("progress").style.width=Math.round(done.size/sections.length*100)+"%"}
+function toast(msg){let t=document.getElementById("toast");t.textContent=msg;t.style.display="block";clearTimeout(window.__t);window.__t=setTimeout(()=>t.style.display="none",3000)}
+
+const quick={
+ attacker:["help","nmap -sV -p 22 10.10.20.15","hydra -l suporte -P wordlist-lab.txt ssh://10.10.20.15 -t 4 -V","ssh suporte@10.10.20.15","clear"],
+ victim:["help","sudo tail -n 30 /var/log/auth.log","who -u","sudo ss -tnp | grep ':22'","sudo journalctl -u ssh --since '2026-05-18 13:00'","clear"],
+ soc:["help","siem query source.ip:10.10.50.23","siem query rule.id:5763","case open BS-SSH-001","active-response block 10.10.50.23","containment status","clear"]
+};
+function terminalMode(m){mode=m;document.querySelectorAll(".tab").forEach((b,i)=>b.classList.toggle("active",["attacker","victim","soc"][i]===m));document.getElementById("termTitle").textContent=m==="attacker"?"kali-red-01:/ops":m==="victim"?"srv-files-01:/var/log":"soc-console:/workspace";document.getElementById("prompt").textContent=m==="attacker"?"kali@red:~$":m==="victim"?"analyst@srv-files-01:~$":"soc@besafe:~$";initTerm(true)}
+function initTerm(keep){if(!keep)document.getElementById("termOut").innerHTML='<span class="info">Be Safe Academy SIEM Lab</span>\nDigite <span class="cmd">help</span>.\n\n';renderCmds();setTimeout(()=>document.getElementById("cmd")?.focus(),50)}
+function renderCmds(){let box=document.getElementById("cmdBtns");if(!box)return;box.innerHTML="";quick[mode].forEach(c=>{let b=document.createElement("button");b.className="ghost";b.textContent=c;b.onclick=()=>run(c);box.appendChild(b)})}
+function cmdKey(e){if(e.key==="Enter"){let v=e.target.value.trim();e.target.value="";if(v)run(v)}}
+function out(s){let o=document.getElementById("termOut");o.innerHTML+=s+"\n";o.scrollTop=o.scrollHeight}
+function run(c){out(`<span class="cmd">${esc(document.getElementById("prompt").textContent+" "+c)}</span>`);if(c==="clear"){document.getElementById("termOut").innerHTML="";return}if(c==="help"){help();return} if(mode==="attacker")attacker(c.toLowerCase());else if(mode==="victim")victim(c.toLowerCase());else soc(c);done.add(1);buildNav();progress();renderMiniSiem();renderSiemView()}
+function help(){out(mode==="attacker"?`nmap -sV -p 22 10.10.20.15
+hydra -l suporte -P wordlist-lab.txt ssh://10.10.20.15 -t 4 -V
+ssh suporte@10.10.20.15`:mode==="victim"?`sudo tail -n 30 /var/log/auth.log
+who -u
+sudo ss -tnp | grep ':22'
+sudo journalctl -u ssh --since '2026-05-18 13:00'`:`siem query source.ip:10.10.50.23
+siem query rule.id:5763
+case open BS-SSH-001
+active-response block 10.10.50.23
+containment status`)}
+
+function event(sev,title,msg,fields,dataset="wazuh.alerts",raw=""){
+ state.id++;
+ let e={id:state.id,time:new Date(Date.now()+state.id*1000).toISOString(),sev,title,msg,fields,dataset,raw};
+ state.events.unshift(e);
+}
+function attacker(c){
+ if(c.includes("nmap")&&c.includes("10.10.20.15")){
+  state.port=true;
+  out(`Starting Nmap 7.95
+
+Nmap scan report for srv-files-01.besafe.local (10.10.20.15)
+Host is up (0.011s latency).
+
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 8.9p1 Ubuntu 3ubuntu0.10
+
+Service Info: OS: Linux
+
+<span class="yellow">Achou SSH. O atacante abriu a wordlist. O SOC abriu o olho.</span>`);
+  event("low","SSH service scan observed","Reconhecimento de serviço SSH contra srv-files-01.",["event.category:network","source.ip:10.10.50.23","destination.ip:10.10.20.15","destination.port:22","service.name:ssh","rule.id:100201"],"network","connection to tcp/22 from 10.10.50.23");
+  toast("SIEM recebeu evento de reconhecimento.");
+  return
+ }
+ if(c.includes("hydra")&&c.includes("ssh://10.10.20.15")){
+  if(state.block){out(`<span class="bad">[ERROR] connection refused / blocked by active response.</span>`);return}
+  state.brute=true;state.login=true;
+  state.logs=[
+   "sshd[2219]: Failed password for suporte from 10.10.50.23 port 51462 ssh2",
+   "sshd[2220]: Failed password for suporte from 10.10.50.23 port 51464 ssh2",
+   "sshd[2221]: Failed password for invalid user admin from 10.10.50.23 port 51466 ssh2",
+   "sshd[2222]: Failed password for suporte from 10.10.50.23 port 51468 ssh2",
+   "sshd[2224]: Accepted password for suporte from 10.10.50.23 port 51470 ssh2"
+  ];
+  out(`[DATA] max 4 tasks per 1 server
+[ATTEMPT] host 10.10.20.15 login "suporte" password "Suporte@123"
+[ATTEMPT] host 10.10.20.15 login "suporte" password "P@ssw0rd!"
+[ATTEMPT] host 10.10.20.15 login "admin" password "admin123"
+[ATTEMPT] host 10.10.20.15 login "suporte" password "BeSafe2026"
+<span class="ok">[22][ssh] host: 10.10.20.15 login: suporte password: BeSafe2026</span>
+
+Credencial fraca validada. O SIEM acabou de ganhar trabalho e o usuário suporte ganhou reunião.`);
+  event("medium","Multiple SSH authentication failures","Múltiplas falhas SSH da mesma origem em janela curta.",["rule.id:5712","source.ip:10.10.50.23","user.name:suporte","agent.name:srv-files-01","event.action:ssh_login_failed","event.dataset:auth.log"],"auth.log",state.logs.slice(0,4).join("\n"));
+  event("critical","SSHD brute force trying to get access","Correlação de brute force SSH contra srv-files-01.",["rule.id:5763","mitre.id:T1110","mitre.technique:Brute Force","source.ip:10.10.50.23","agent.name:srv-files-01","service.name:ssh"],"wazuh.alerts","Rule 5763 fired: sshd brute force source=10.10.50.23");
+  event("critical","SSH login successful after failures","Login aceito para suporte após sequência de falhas.",["rule.id:5501","source.ip:10.10.50.23","user.name:suporte","event.action:ssh_login_success","status:compromise_suspected","agent.name:srv-files-01"],"auth.log",state.logs[4]);
+  toast("SIEM gerou alerta crítico: brute force + login aceito.");
+  return
+ }
+ if(c.startsWith("ssh suporte@10.10.20.15")){
+  if(state.block){out(`<span class="bad">ssh: connect to host 10.10.20.15 port 22: Connection timed out</span>`);return}
+  if(!state.login){out(`suporte@10.10.20.15's password:
+Permission denied. Rode o brute force no lab antes.`);return}
+  out(`suporte@10.10.20.15's password:
+Welcome to Ubuntu 22.04.5 LTS
+Last login: Mon May 18 13:04:18 from 10.10.50.23
+<span class="ok">suporte@srv-files-01:~$</span>
+
+Acesso interativo confirmado. Agora não é "tentativa"; é incidente com café ruim.`);
+  event("high","Interactive SSH session established","Sessão SSH interativa observada para usuário suporte.",["rule.id:5502","source.ip:10.10.50.23","user.name:suporte","process.name:sshd","session.type:interactive"],"auth.log","Accepted session opened for user suporte by sshd");
+  return
+ }
+ out("Comando não reconhecido. Digite help.")
+}
+function victim(c){
+ if(c.includes("tail")&&c.includes("auth.log")){out(state.logs.length?state.logs.map((l,i)=>`May 18 13:04:${11+i*2} srv-files-01 ${l}`).join("\n"):"May 18 12:58:02 srv-files-01 sshd[1991]: Server listening on 0.0.0.0 port 22");return}
+ if(c==="who -u"){out(state.login&&!state.block?"suporte  pts/2  2026-05-18 13:04  .  2249 (10.10.50.23)":"Nenhuma sessão SSH suspeita ativa.");return}
+ if(c.includes("ss -tnp")){out(state.login&&!state.block?'ESTAB 0 0 10.10.20.15:22 10.10.50.23:51470 users:(("sshd",pid=2249,fd=4))':'LISTEN 0 128 0.0.0.0:22 0.0.0.0:* users:(("sshd",pid=1991,fd=3))');return}
+ if(c.includes("journalctl")){out(state.logs.length?`May 18 13:04:11 Failed password for suporte from 10.10.50.23
+May 18 13:04:15 Failed password for invalid user admin from 10.10.50.23
+May 18 13:04:18 Accepted password for suporte from 10.10.50.23`:"-- No entries --");return}
+ out("Comando não reconhecido. Digite help.")
+}
+function soc(c){
+ let lc=c.toLowerCase();
+ if(lc.startsWith("siem query")){let q=c.replace(/^siem query/i,"").trim();document.getElementById("query").value=q;siemTab="discover";buildSiemMenu();renderSiemView();out(`Query enviada ao SIEM: ${q}`);return}
+ if(lc.startsWith("case open")){state.case=true;out(`Case BS-SSH-001 aberto
+Owner: ${student}
+Severity: High
+Resumo: SSH brute force com login aceito em srv-files-01`);event("medium","Incident case opened","Caso de incidente aberto pelo SOC.",["case.id:BS-SSH-001","owner:"+student,"status:open","agent.name:srv-files-01"],"wazuh.alerts","case opened");return}
+ if(lc.startsWith("active-response block")){if(!lc.includes("10.10.50.23")){out("Use: active-response block 10.10.50.23");return}state.block=true;out(`<span class="ok">Active Response applied</span>
+command: firewall-drop
+target: 10.10.50.23
+timeout: 600s
+status: contained`);event("critical","Active response executed","Bloqueio temporário aplicado contra origem do ataque.",["action:firewall-drop","source.ip:10.10.50.23","timeout:600","status:applied"],"wazuh.alerts","firewall-drop 10.10.50.23");toast("Resposta ativa aplicada.");return}
+ if(lc==="containment status"){out(`source.ip 10.10.50.23: ${state.block?"blocked":"not blocked"}
+case: ${state.case?"BS-SSH-001 open":"not opened"}
+account suporte: ${state.login?"compromise suspected":"no compromise observed"}`);return}
+ out("Comando SOC não reconhecido. Digite help.")
+}
+
+function buildSiemMenu(){let tabs=[["overview","Overview"],["discover","Discover"],["alerts","Alerts"],["rules","Detection Rules"],["timeline","Timeline"],["cases","Cases"],["response","Response"],["raw","Raw Events"]];let m=document.getElementById("siemMenu");if(!m)return;m.innerHTML="";tabs.forEach(([id,n])=>{let b=document.createElement("button");b.className=id===siemTab?"active":"";b.textContent=n;b.onclick=()=>{siemTab=id;buildSiemMenu();renderSiemView()};m.appendChild(b)})}
+function filteredEvents(){
+ let q=(document.getElementById("query")?.value||"").toLowerCase().trim(), sev=document.getElementById("severity")?.value||"", ds=document.getElementById("dataset")?.value||"";
+ return state.events.filter(e=>{
+  let blob=(e.sev+" "+e.title+" "+e.msg+" "+e.dataset+" "+e.fields.join(" ")+" "+e.raw).toLowerCase();
+  let okQ=true;
+  if(q){
+   let terms=q.replace(/\band\b/g," ").replace(/\bor\b/g," ").split(/\s+/).filter(Boolean);
+   okQ=terms.every(t=>blob.includes(t.replace(/"/g,"")));
+  }
+  return okQ && (!sev||e.sev===sev) && (!ds||e.dataset===ds);
+ })
+}
+function counts(){let ev=state.events;return{total:ev.length,critical:ev.filter(e=>e.sev==="critical").length,high:ev.filter(e=>e.sev==="high").length,medium:ev.filter(e=>e.sev==="medium").length,low:ev.filter(e=>e.sev==="low").length}}
+function renderMiniSiem(){let box=document.getElementById("miniSiem");if(!box)return;let c=counts();box.innerHTML=`<div class="dashGrid">
+<div class="metric"><b>${c.total}</b><span>eventos</span></div>
+<div class="metric"><b>${c.critical}</b><span>críticos</span></div>
+<div class="metric"><b>${state.login?"sim":"não"}</b><span>login aceito</span></div>
+<div class="metric"><b>${state.block?"ativo":"não"}</b><span>bloqueio</span></div>
+</div><div class="eventList">${state.events.slice(0,6).map(eventHtml).join("")||'<div class="eventCard"><b>Aguardando ingestão.</b><p>Rode nmap/hydra no terminal.</p></div>'}</div>`}
+function renderSiemView(){
+ let view=document.getElementById("siemView");if(!view)return;document.getElementById("siemTitle").textContent=({overview:"Overview",discover:"Discover",alerts:"Alerts",rules:"Detection Rules",timeline:"Timeline",cases:"Cases",response:"Response",raw:"Raw Events"})[siemTab];
+ let ev=filteredEvents(), c=counts();
+ if(siemTab==="overview"){view.innerHTML=`<div class="dashGrid">
+ <div class="metric"><b>${c.total}</b><span>total events</span></div><div class="metric"><b>${c.critical}</b><span>critical</span></div><div class="metric"><b>${c.medium}</b><span>medium</span></div><div class="metric"><b>${state.block?"ON":"OFF"}</b><span>active response</span></div></div>
+ <div class="chartGrid"><div class="panel"><h3>Severity distribution</h3><div class="bars">
+ ${bar("critical",c.critical,c.total)}${bar("high",c.high,c.total)}${bar("medium",c.medium,c.total)}${bar("low",c.low,c.total)}
+ </div></div><div class="panel"><h3>Últimos alertas</h3><div class="eventList">${state.events.slice(0,4).map(eventHtml).join("")||"Sem eventos ainda."}</div></div></div>`}
+ if(siemTab==="discover"){view.innerHTML=`<table class="table"><thead><tr><th>@timestamp</th><th>severity</th><th>event</th><th>fields</th></tr></thead><tbody>${ev.map(e=>`<tr><td>${e.time}</td><td>${e.sev}</td><td><b>${e.title}</b><br>${e.msg}</td><td>${e.fields.map(f=>`<span class="pill">${esc(f)}</span>`).join("")}</td></tr>`).join("")||"<tr><td colspan='4'>Sem eventos para o filtro.</td></tr>"}</tbody></table>`}
+ if(siemTab==="alerts"){view.innerHTML=`<div class="eventList">${ev.filter(e=>["critical","high","medium"].includes(e.sev)).map(eventHtml).join("")||'<div class="eventCard">Sem alertas.</div>'}</div>`}
+ if(siemTab==="rules"){view.innerHTML=`<table class="table"><thead><tr><th>Rule</th><th>Descrição</th><th>MITRE</th><th>Status</th></tr></thead><tbody>
+ <tr><td>5712</td><td>Multiple SSH authentication failures</td><td>Credential Access</td><td>enabled</td></tr>
+ <tr><td>5763</td><td>SSHD brute force trying to get access</td><td>T1110 Brute Force</td><td>enabled</td></tr>
+ <tr><td>5501</td><td>SSH login successful after failures</td><td>Initial Access</td><td>enabled</td></tr>
+ <tr><td>100201</td><td>SSH service scan observed</td><td>Reconnaissance</td><td>custom</td></tr>
+ </tbody></table>`}
+ if(siemTab==="timeline"){view.innerHTML=`<div class="timeline">${state.events.slice().reverse().map(e=>`<div class="tl"><time>${e.time.split("T")[1]?.slice(0,8)||e.time}</time><div><b>${e.title}</b><p>${e.msg}</p>${e.fields.map(f=>`<span class="pill">${esc(f)}</span>`).join("")}</div></div>`).join("")||"Sem timeline ainda."}</div>`}
+ if(siemTab==="cases"){view.innerHTML=`<div class="caseBox"><div class="caseItem"><b>${state.case?"BS-SSH-001 • OPEN":"Nenhum caso aberto"}</b><p>${state.case?"SSH brute force com login aceito. Owner: "+student:"Use o terminal SOC: case open BS-SSH-001"}</p><span class="pill">severity:${state.login?"high":"none"}</span><span class="pill">host:srv-files-01</span><span class="pill">source.ip:10.10.50.23</span></div></div>`}
+ if(siemTab==="response"){view.innerHTML=`<div class="caseBox"><div class="caseItem"><b>Active Response</b><p>Status: <b>${state.block?"applied":"not applied"}</b></p><p>Comando SOC: <span class="cmd">active-response block 10.10.50.23</span></p><span class="pill">action:firewall-drop</span><span class="pill">timeout:600</span></div></div>`}
+ if(siemTab==="raw"){view.innerHTML=`<div class="eventList">${ev.map(e=>`<div class="eventCard ${e.sev}"><div class="raw">${esc(JSON.stringify(e,null,2))}</div></div>`).join("")||"Sem raw events."}</div>`}
+}
+function bar(n,v,t){let pct=t?Math.round(v/t*100):0;return `<div class="barRow"><span>${n}</span><div class="bar"><span style="width:${pct}%"></span></div><b>${v}</b></div>`}
+function eventHtml(e){return `<div class="eventCard ${e.sev}"><div class="eventTop"><span class="eventTitle">${esc(e.title)}</span><span class="time">${esc(e.time)}</span></div><p>${esc(e.msg)}</p><span class="pill">severity:${e.sev}</span><span class="pill">dataset:${e.dataset}</span>${e.fields.map(f=>`<span class="pill">${esc(f)}</span>`).join("")}</div>`}
+function clearFilters(){document.getElementById("query").value="";document.getElementById("severity").value="";document.getElementById("dataset").value="";renderSiemView()}
+
+const qz=[
+ {q:"Qual sinal transforma o evento de tentativa em suspeita forte de comprometimento?",a:["Login aceito após sequência de falhas da mesma origem","Porta 22 aberta em um scan autorizado","Falha isolada de senha para usuário válido","Existência de agente no endpoint"],c:0,e:"O login aceito após falhas indica possível acesso inicial e exige investigação de escopo."},
+ {q:"Qual filtro é mais útil para pivotar a investigação no SIEM?",a:["source.ip:10.10.50.23 combinado com host e rule.id","Todos os eventos do mês sem filtro","Apenas eventos com tema visual escuro","Consulta genérica por Linux sem janela temporal"],c:0,e:"Origem, host, regra e janela temporal preservam contexto e reduzem ruído."},
+ {q:"Qual regra representa melhor o brute force SSH correlacionado?",a:["rule.id:5763","rule.id:100201","rule.id:0000","rule.id:5502"],c:0,e:"No lab, 5763 representa a correlação de brute force SSH."},
+ {q:"Qual comando no servidor confirma sessão SSH suspeita ativa?",a:["who -u","nmap -sV","hydra -V","clear"],c:0,e:"who -u mostra sessões, horários e origem quando disponível."},
+ {q:"Qual resposta é mais madura após login aceito?",a:["Conter origem, bloquear credencial, preservar evidência e caçar pós-login","Apagar logs para reduzir ruído","Reiniciar servidor e encerrar chamado","Ignorar porque o usuário é operacional"],c:0,e:"A resposta precisa conter, preservar e investigar ações posteriores."},
+ {q:"Qual técnica MITRE é central no ataque?",a:["T1110 Brute Force","T1041 Exfiltration","T1562 Impair Defenses","T1059 Command Interpreter"],c:0,e:"O núcleo é tentativa de autenticação por força bruta."},
+ {q:"Qual risco existe em active response automática?",a:["Bloquear origem legítima por falso positivo ou escopo ruim","Aumentar a entropia da senha do atacante","Transformar SSH em HTTP","Impedir que o SIEM receba logs para sempre"],c:0,e:"Automação sem critério pode causar indisponibilidade."},
+ {q:"O que o Discover do SIEM deve permitir?",a:["Buscar eventos por campo, severidade, dataset e texto","Alterar senha do usuário diretamente","Compilar kernel Linux","Substituir investigação humana"],c:0,e:"Discover serve para busca e pivoteamento de eventos."},
+ {q:"Por que raw events são importantes?",a:["Permitem validar o evento normalizado contra a evidência original","Decoram o dashboard para apresentação","Substituem contenção","Removem a necessidade de timeline"],c:0,e:"Raw event ajuda a verificar a fonte e evitar interpretação errada."},
+ {q:"Qual prevenção reduziria mais a chance de sucesso?",a:["Chaves/MFA, senha forte, lockout e restrição de origem","Renomear suporte para suporte2","Trocar wallpaper do servidor","Desativar alertas críticos"],c:0,e:"Controles de autenticação e exposição atacam a causa do risco."}
+];
+let rendered=[];
+function shuffle(a){return a.map(v=>({v,s:Math.random()})).sort((x,y)=>x.s-y.s).map(x=>x.v)}
+function renderQuiz(){let box=document.getElementById("quiz");box.innerHTML="";rendered=qz.map((q,i)=>{let opts=shuffle(q.a.map((t,j)=>({t,ok:j===q.c})));let d=document.createElement("div");d.className="quizQ";d.innerHTML=`<h3>${i+1}. ${q.q}</h3>`;opts.forEach(o=>{let b=document.createElement("button");b.className="option";b.textContent=o.t;b.dataset.ok=enc(o.ok?"1":"0");b.onclick=()=>{d.querySelectorAll(".option").forEach(x=>x.classList.remove("selected"));b.classList.add("selected")};d.appendChild(b)});box.appendChild(d);return{e:enc(q.e)}})}
+function finishQuiz(){let qs=[...document.querySelectorAll(".quizQ")],score=0,ans=0;qs.forEach(q=>{let s=q.querySelector(".selected");if(s){ans++;if(dec(s.dataset.ok)==="1")score++}});let r=document.getElementById("result");if(ans<qs.length){r.style.display="block";r.innerHTML="<b class='bad'>Responda tudo, bebê.</b><p>Incidente pela metade vira relatório humilhante.</p>";return}let pct=Math.round(score/qs.length*100);r.style.display="block";r.innerHTML=`<h3>${pct>=70?"Aula concluída. SIEM aprovado.":"Aula concluída, mas o SOC pediu reciclagem."}</h3><p><b class="${pct>=70?"ok":"bad"}">Resultado: ${score}/10 (${pct}%)</b></p><ol>${rendered.map(x=>"<li>"+dec(x.e)+"</li>").join("")}</ol>`;done.add(4);buildNav();progress()}
+</script>
+</body>
+</html>
