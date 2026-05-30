@@ -473,7 +473,7 @@ let state={port:false, brute:false, login:false, block:false, case:false, id:0, 
 const K="BESAFE-SIEM-SALT-XOR-2026";
 function enc(s){let o="";for(let i=0;i<s.length;i++)o+=String.fromCharCode(s.charCodeAt(i)^K.charCodeAt(i%K.length));return btoa(unescape(encodeURIComponent(o)))}
 function dec(s){let raw=decodeURIComponent(escape(atob(s)));let o="";for(let i=0;i<raw.length;i++)o+=String.fromCharCode(raw.charCodeAt(i)^K.charCodeAt(i%K.length));return o}
-function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]))}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",\"":"&quot;","'":"&#39;"}[m]))}
 
 function start(){
  const n=document.getElementById("studentName").value.trim();
@@ -698,29 +698,44 @@ function retryQuiz(){
 
 function showCertificate(pct){
  const total=document.querySelectorAll('.quizQ').length || 10;
- const selected=[...document.querySelectorAll('.quizQ')].filter(q=>q.querySelector('.selected')).length || total;
  const correct=Math.round((pct/100)*total);
  const id='BS-2026-'+String(Date.now()).slice(-6).toUpperCase();
- document.getElementById('certStudent').textContent=student;
- document.getElementById('certScore').textContent=correct + '/' + total + ' (' + pct + '%)';
- document.getElementById('certDate').textContent=new Date().toLocaleDateString('pt-BR');
- document.getElementById('certId').textContent='ID: '+id;
- document.getElementById('certCase').textContent=id;
- document.getElementById('certificateModal').style.display='flex';
+ const setText=(el,value)=>{const node=document.getElementById(el); if(node) node.textContent=value;};
+ setText('certStudent', student || 'Aluno');
+ setText('certScore', correct + '/' + total + ' (' + pct + '%)');
+ setText('certDate', new Date().toLocaleDateString('pt-BR'));
+ setText('certId', 'ID: '+id);
+ setText('certCase', id);
+ const modal=document.getElementById('certificateModal');
+ if(modal) modal.style.display='flex';
 }
 
 function closeCertificate(){
- document.getElementById('certificateModal').style.display='none';
+ const modal=document.getElementById('certificateModal');
+ if(modal) modal.style.display='none';
 }
 
-function downloadCertificate(){
+async function downloadCertificate(){
  const card=document.getElementById('certificateCard');
- html2canvas(card,{scale:2,useCORS:true,backgroundColor:null}).then(canvas=>{
+ if(!card){ toast('Certificado não encontrado na tela.'); return; }
+ if(typeof html2canvas !== 'function'){
+   toast('Biblioteca de geração ainda não carregou. Abra com internet ou recarregue a página.');
+   return;
+ }
+ try{
+   const canvas=await html2canvas(card,{scale:2,useCORS:true,allowTaint:true,backgroundColor:null,logging:false,windowWidth:card.scrollWidth,windowHeight:card.scrollHeight});
    const link=document.createElement('a');
-   link.download='be-safe-academy-certificado-siem.png';
+   const safeName=(student || 'aluno').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9_-]+/gi,'-').replace(/^-|-$/g,'').toLowerCase();
+   link.download='be-safe-academy-certificado-siem-'+(safeName || 'aluno')+'.png';
    link.href=canvas.toDataURL('image/png');
+   document.body.appendChild(link);
    link.click();
- });
+   link.remove();
+   toast('Certificado PNG gerado.');
+ }catch(err){
+   console.error(err);
+   toast('Não consegui gerar o PNG neste navegador. Tente abrir em Chrome/Edge e permitir download.');
+ }
 }
 
 </script>
@@ -738,6 +753,9 @@ function downloadCertificate(){
         <div><b>BE SAFE</b><br><span>ACADEMY</span></div>
       </div>
 
+      <div class="certQR">
+        <div class="qrBox"></div>
+        <span id="certId">ID: BS-2026</span>
       </div>
 
       <div class="certBottomMedal">⌁</div>
@@ -758,9 +776,29 @@ function downloadCertificate(){
           análise de evidências Linux e resposta técnica a incidente.
         </p>
 
-        <div class="certScoreRibbon">APROVADO • SCORE <span id="certScore">0%</span></div>
+        <div class="certScoreRibbon">APROVADO • SCORE <span id="certScore">0/10 (0%)</span></div>
         <div class="certMeta">Emitido em <span id="certDate"></span> • CASE-ID: <span id="certCase">BS-SIEM</span></div>
+
+        <div class="certLower">
+          <div class="learned">
+            <h3>Competências validadas</h3>
+            <ul>
+              <li>Investigação de autenticação SSH</li>
+              <li>Correlação de eventos no SIEM</li>
+              <li>Pivot por source.ip, host e rule.id</li>
+              <li>Resposta ativa e contenção</li>
+            </ul>
+          </div>
+          <div class="summaryBox">
+            <h3>Resumo técnico</h3>
+            <div class="summaryRow"><b>Lab</b><span>SSH Brute Force Detection & Response</span></div>
+            <div class="summaryRow"><b>Técnica</b><span>MITRE ATT&CK T1110 • Brute Force</span></div>
+            <div class="summaryRow"><b>Escopo</b><span>auth.log, Wazuh alerts, timeline, case e active response</span></div>
+          </div>
+        </div>
       </div>
+
+      <div class="certSealPremium"><div><b>SOC</b><span>READY</span></div></div>
 
       <div class="certSignature">
         <div class="sig">Mariana BS</div>
@@ -779,6 +817,5 @@ function downloadCertificate(){
     </div>
   </div>
 </div>
-
 </body>
 </html>
