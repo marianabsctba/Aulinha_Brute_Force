@@ -322,7 +322,7 @@ pre{margin:0;padding:13px;font:13px/1.55 var(--mono);white-space:pre-wrap;word-b
         <p class="small">Obrigatório para começar. O SIEM precisa de contexto, e o SOC precisa culpar alguém pelo relatório.</p>
         <label for="studentName">Aluno</label>
         <input id="studentName" placeholder="Ex.: Mariana BS" autocomplete="name">
-        <button class="primary" style="margin-top:18px" onclick="start()">Entrar na aula</button>
+        <button id="startBtn" class="primary" style="margin-top:18px" type="button">Entrar na aula</button>
         <p id="warn" class="warn"></p>
         <p class="small">Lab educacional e autorizado. Não rode contra terceiros. Hydra fora de escopo vira BO, não portfólio.</p>
       </div>
@@ -473,9 +473,9 @@ let state={port:false, brute:false, login:false, block:false, case:false, id:0, 
 const K="BESAFE-SIEM-SALT-XOR-2026";
 function enc(s){let o="";for(let i=0;i<s.length;i++)o+=String.fromCharCode(s.charCodeAt(i)^K.charCodeAt(i%K.length));return btoa(unescape(encodeURIComponent(o)))}
 function dec(s){let raw=decodeURIComponent(escape(atob(s)));let o="";for(let i=0;i<raw.length;i++)o+=String.fromCharCode(raw.charCodeAt(i)^K.charCodeAt(i%K.length));return o}
-function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",\"":"&quot;","'":"&#39;"}[m]))}
+function esc(s){return String(s).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];});}
 
-function start(){
+function startCore(){
  const n=document.getElementById("studentName").value.trim();
  if(!n){document.getElementById("warn").textContent="Sem nome, sem SIEM, bebê. Até evento precisa de owner.";return}
  student=n;document.getElementById("hero").style.display="none";document.getElementById("main").style.display="block";document.getElementById("studentLabel").textContent="Aluno: "+student;
@@ -492,6 +492,40 @@ const quick={
  victim:["help","sudo tail -n 30 /var/log/auth.log","who -u","sudo ss -tnp | grep ':22'","sudo journalctl -u ssh --since '2026-05-18 13:00'","clear"],
  soc:["help","siem query source.ip:10.10.50.23","siem query rule.id:5763","case open BS-SSH-001","active-response block 10.10.50.23","containment status","clear"]
 };
+
+function start(){
+ try{
+   startCore();
+ }catch(err){
+   console.error(err);
+   const hero=document.getElementById("hero");
+   const main=document.getElementById("main");
+   if(hero) hero.style.display="grid";
+   if(main) main.style.display="none";
+   const warn=document.getElementById("warn");
+   if(warn) warn.textContent="Erro ao abrir a aula: "+(err && err.message ? err.message : err)+". Me mande esse texto se aparecer.";
+   alert("Erro ao abrir a aula: "+(err && err.message ? err.message : err));
+ }
+}
+window.addEventListener("DOMContentLoaded",function(){
+ const hero=document.getElementById("hero");
+ const main=document.getElementById("main");
+ const modal=document.getElementById("certificateModal");
+ if(hero) hero.style.display="grid";
+ if(main) main.style.display="none";
+ if(modal) modal.style.display="none";
+ const btn=document.getElementById("startBtn");
+ if(btn) btn.addEventListener("click",start);
+ const input=document.getElementById("studentName");
+ if(input) input.addEventListener("keydown",function(e){ if(e.key==="Enter") start(); });
+});
+window.addEventListener("error",function(e){
+ const warn=document.getElementById("warn");
+ if(warn && document.getElementById("hero") && document.getElementById("hero").style.display!=="none"){
+   warn.textContent="Erro de JavaScript: "+e.message;
+ }
+});
+
 function terminalMode(m){mode=m;document.querySelectorAll(".tab").forEach((b,i)=>b.classList.toggle("active",["attacker","victim","soc"][i]===m));document.getElementById("termTitle").textContent=m==="attacker"?"kali-red-01:/ops":m==="victim"?"srv-files-01:/var/log":"soc-console:/workspace";document.getElementById("prompt").textContent=m==="attacker"?"kali@red:~$":m==="victim"?"analyst@srv-files-01:~$":"soc@besafe:~$";initTerm(true)}
 function initTerm(keep){if(!keep)document.getElementById("termOut").innerHTML='<span class="info">Be Safe Academy SIEM Lab</span>\nDigite <span class="cmd">help</span>.\n\n';renderCmds();setTimeout(()=>document.getElementById("cmd")?.focus(),50)}
 function renderCmds(){let box=document.getElementById("cmdBtns");if(!box)return;box.innerHTML="";quick[mode].forEach(c=>{let b=document.createElement("button");b.className="ghost";b.textContent=c;b.onclick=()=>run(c);box.appendChild(b)})}
